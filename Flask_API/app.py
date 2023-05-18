@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask import request, jsonify
 from dbSecrets import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+import hashlib
 
 app = Flask(__name__)
 # set the copnnection String
@@ -48,6 +49,61 @@ class UserLogin(db.Model):
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
+
+# endpoint to get one user by id
+
+
+@app.route('/users/<int:id>', methods=['GET'])
+def get_user_by_id(id):
+    user = User.query.get(id)
+    user_data = {
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'failed_login_count': user.failed_login_count,
+        'locked_out': user.locked_out,
+        'locked_out_end': user.locked_out_end,
+        'email_to_upper': user.email_to_upper,
+        'password_hash': user.password_hash,
+        'failed_login_time': user.failed_login_time
+    }
+    return jsonify(user_data)
+
+# endpoint to create a new user
+
+#
+
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    # get the data from the request
+    data = request.get_json()
+    # check to see that the username, email and password are not empty
+    if data['username'] == '' or data['email'] == '' or data['password'] == '':
+        return 'username, email and password are required', 400
+    # create a new user object populating the to_upper field with the email as uppercase
+    new_user = User(
+        username=data['username'], email=data['email'], email_to_upper=data['email'].upper())
+    # get the password from the request
+    password = data['password']
+    # hash the password using hashlib
+    new_user.password_hash = hashlib.sha256(
+        password.encode('utf-8')).hexdigest()
+    # print the hashed password
+    print(new_user.password_hash)
+    # add the new user to the database
+    # db.session.add(new_user)
+    # commit the changes
+    # db.session.commit()
+    # return the new user
+    return jsonify({
+        'username': new_user.username,
+        'email': new_user.email,
+        'email_to_upper': new_user.email_to_upper,
+        'password_hash': new_user.password_hash
+    })
+    # return jsonify(new_user)
+
 
 # users endpoint for testing database access
 

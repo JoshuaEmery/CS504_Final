@@ -16,7 +16,5 @@ COPY app.py .
 # Copy the dbSecrets file which has the login info
 COPY dbSecrets.py .
 
-# Flask using port 8080 since port 5000 was used by macos
-EXPOSE 8080
 # Run app.py when the container launches
 CMD ["python", "app.py"]
