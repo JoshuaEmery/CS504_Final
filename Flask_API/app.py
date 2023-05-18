@@ -92,17 +92,21 @@ def create_user():
     # print the hashed password
     print(new_user.password_hash)
     # add the new user to the database
-    # db.session.add(new_user)
+    db.session.add(new_user)
     # commit the changes
-    # db.session.commit()
-    # return the new user
-    return jsonify({
+    db.session.commit()
+    # return the new user for testing
+    user_data = {
+        'id': new_user.id,
         'username': new_user.username,
         'email': new_user.email,
         'email_to_upper': new_user.email_to_upper,
-        'password_hash': new_user.password_hash
-    })
-    # return jsonify(new_user)
+        'password_hash': new_user.password_hash,
+        'failed_login_count': new_user.failed_login_count,
+        'locked_out': new_user.locked_out,
+        'locked_out_end': new_user.locked_out_end
+    }
+    return jsonify(user_data)
 
 
 # users endpoint for testing database access
