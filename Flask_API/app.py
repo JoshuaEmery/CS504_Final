@@ -5,11 +5,13 @@ from dbSecrets import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 
 app = Flask(__name__)
 # set the copnnection String
-# app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://root:{"CS504P@ssw3rd!"}@localhost:5000/user_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://root:{"CS504P@ssw3rd!"}@localhost:3306/user_db'
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 # create the DB object
 db = SQLAlchemy(app)
 # class to represent the users table
+
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -24,24 +26,32 @@ class User(db.Model):
     # this is a naviation property. this is not an actual column in the database
     logins = db.relationship('UserLogin', backref='user')
     # this is how you override the tostring method in python
+
     def __repr__(self):
         return f"User(id={self.id}, username={self.username}, email={self.email})"
 # class to represent the userlogins table
+
+
 class UserLogin(db.Model):
     __tablename__ = 'user_logins'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     logged_in = db.Column(db.DateTime)
     # tostring again
+
     def __repr__(self):
         return f"UserLogin(id={self.id}, user_id={self.user_id}, logged_in={self.logged_in})"
 
 # endpoint for testing
+
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
 
-#users endpoint for testing database access
+# users endpoint for testing database access
+
+
 @app.route('/users', methods=['GET'])
 def get_all_users():
     users = User.query.all()
@@ -63,5 +73,6 @@ def get_all_users():
 
     return jsonify(users_list)
 
+
 if __name__ == '__main__':
-    app.run()
+    app.run(port=8080)
