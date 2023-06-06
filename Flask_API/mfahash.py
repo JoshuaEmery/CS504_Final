@@ -6,14 +6,13 @@ SECRET_KEY = "your_secret_key"
 
 # This is a method that gets the time and rounds it down to the nearest three minutes
 # This time use used in generating a unique TFA code every 3 minutes
-def generate_time_based_variable():
-    # Get current time
-    current_time = datetime.now()
-
+def generate_time_based_variable(time = datetime.now()):
+    # unless a time is passed in, use the current time
+    
     # This line of code is rounding the current time down to the nearest 3 minutes
-    time_rounded = timedelta(minutes=current_time.minute % 3, seconds=current_time.second, microseconds=current_time.microsecond)
+    time_rounded = timedelta(minutes=time.minute % 3, seconds=time.second, microseconds=time.microsecond)
     # subtract the rounded time
-    rounded_time = current_time - time_rounded
+    rounded_time = time - time_rounded
     # This variable will be used to generate the TFA code and will generate the same TFA Code
     # for 3 minutes
     return rounded_time
@@ -81,4 +80,4 @@ print(generate_tfa_code("test@test.com"))
 # notice that each tfa code will only be valid for 3 minutes. If you want to modify
 # the time interval, you can change the (minutes=current_time.minute % 3 to a different number
 # in the generate_time_based_variable method
-print(validate_tfa("test@test.com", "38de95"))
+print(validate_tfa("test@test.com", "0adf16"))
