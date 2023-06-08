@@ -75,7 +75,7 @@ def validate_tfa(username, tfacode):
 
 # calling these for testing
 # print a tfa for a user
-print(generate_tfa_code("test@test.com"))
+print(generate_tfa_code("test4post@post.com"))
 # print the result of validating a user and their tfa code. If the code
 # notice that each tfa code will only be valid for 3 minutes. If you want to modify
 # the time interval, you can change the (minutes=current_time.minute % 3 to a different number

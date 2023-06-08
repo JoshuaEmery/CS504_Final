@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask import request, jsonify
 from dbSecretsLocal import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from datetime import datetime, timedelta
+import mfahash
 import hashlib
 
 app = Flask(__name__)
@@ -165,6 +166,32 @@ def login():
         'locked_out_end': user.locked_out_end
     }
     return jsonify(user_data)
+
+@app.route('/tfa', methods=['POST'])
+def tfa():
+    data = request.get_json()
+    if data['username'] == '':
+        return 'username is required', 400
+    user = User.query.filter_by(email_to_upper=data['username'].upper()).first()
+    print(user)
+    print(data['username'])
+    if user is None:
+        return 'user not found', 404
+    tfa_code = mfahash.generate_tfa_code(user.username)
+    return jsonify({'tfa_code': tfa_code})
+
+@app.route('/tfa/validate', methods=['POST'])
+def tfa_validate():
+    data = request.get_json()
+    if data['username'] == '' or data['tfa_code'] == '':
+        return 'username and tfa_code are required', 400
+    user = User.query.filter_by(email_to_upper=data['username'].upper()).first()
+    if user is None:
+        return 'user not found', 404
+    if data['tfa_code'] == mfahash.generate_tfa_code(user.username):
+        return 'tfa code is valid', 200
+    else:
+        return 'tfa code is invalid', 401
 
 if __name__ == '__main__':
     app.run(port=8080)
