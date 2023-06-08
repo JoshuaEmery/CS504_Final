@@ -1,10 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS 
 from flask import request, jsonify
 from dbSecretsLive import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 import hashlib
 
 app = Flask(__name__)
+CORS(app)
 # set the copnnection String
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 # create the DB object
@@ -102,6 +104,12 @@ def create_user():
     }
     return jsonify(user_data)
 
+#endpoint for login
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    # send the username and password as json for testing
+    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(port=8080)
