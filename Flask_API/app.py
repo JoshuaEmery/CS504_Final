@@ -2,7 +2,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS 
 from flask import request, jsonify
-from dbSecretsLive import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from dbSecretsLocal import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from datetime import datetime, timedelta
 import hashlib
 
 app = Flask(__name__)
@@ -36,6 +37,7 @@ class UserLogin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     logged_in = db.Column(db.DateTime)
+    successful = db.Column(db.Integer)
     # tostring again
     def __repr__(self):
         return f"UserLogin(id={self.id}, user_id={self.user_id}, logged_in={self.logged_in})"
@@ -80,7 +82,11 @@ def create_user():
         return 'username, email and password are required', 400
     # create a new user object populating the to_upper field with the email as uppercase
     new_user = User(
-        username=data['username'], email=data['email'], email_to_upper=data['email'].upper())
+        username=data['username'], 
+        email=data['email'], 
+        email_to_upper=data['email'].upper(),
+        failed_login_count=0,
+        locked_out=0)
     # get the password from the request
     password = data['password']
     # hash the password using hashlib
@@ -107,9 +113,58 @@ def create_user():
 #endpoint for login
 @app.route('/login', methods=['POST'])
 def login():
+    # get the data from the request
     data = request.get_json()
-    # send the username and password as json for testing
-    return jsonify(data)
+    # check to see that the username and password are not empty
+    if data['username'] == '' or data['password'] == '':
+        return 'username and password are required', 400
+    # get the user from the database
+    user = User.query.filter_by(email_to_upper=data['username'].upper()).first()
+    # check to see if the user exists
+    if user is None:
+        return 'user not found', 404
+    # check to see if the user is locked out
+    if user.locked_out == 1 and user.locked_out_end > datetime.now():
+        return 'user is locked out', 403
+    # get the password from the request
+    password = data['password']
+    # hash the password using hashlib
+    password_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    # check to see if the password matches the password hash
+    if password_hash != user.password_hash:
+        uLogin = UserLogin(user_id=user.id, logged_in=datetime.now(), successful=0)
+        db.session.add(uLogin)
+        # increment the failed login count
+        user.failed_login_count += 1
+        # check to see if the failed login count is greater than 3
+        if user.failed_login_count >= 3:
+            # if it is, lock the user out
+            user.locked_out = 1
+            # reset the failed login count
+            user.failed_login_count = 0
+            # set the locked out end time to 5 minutes from now
+            user.locked_out_end = datetime.now() + timedelta(minutes=5)
+        db.session.commit()
+        return 'invalid password', 401
+    # if we make it down here we know the password is correct and the user is not locked out
+    # reset the failed login count
+    user.failed_login_count = 0
+    uLogin = UserLogin(user_id=user.id, logged_in=datetime.now(), successful =  1)
+    db.session.add(uLogin)
+    # commit the changes
+    db.session.commit()
+    # return the user for testing
+    user_data = {
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'email_to_upper': user.email_to_upper,
+        'password_hash': user.password_hash,
+        'failed_login_count': user.failed_login_count,
+        'locked_out': user.locked_out,
+        'locked_out_end': user.locked_out_end
+    }
+    return jsonify(user_data)
 
 if __name__ == '__main__':
     app.run(port=8080)

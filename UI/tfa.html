@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TFA Page</title>
+  </head>
+  <body>
+    <h1>TFA Page</h1>
+    <script>
+      // Function to get the value of a URL query parameter
+      function getQueryParam(name) {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        return urlParams.get(name);
+      }
+
+      // Get the username from the URL query parameter
+      const username = getQueryParam("email");
+
+      // Display the username on the page
+      const usernameElement = document.createElement("p");
+      usernameElement.textContent = "Username: " + username;
+      document.body.appendChild(usernameElement);
+    </script>
+  </body>
+</html>
