@@ -19,12 +19,12 @@ class TFA:
         if time is None:
             time = datetime.now()
         # This line of code is rounding the current time down to the nearest 3 minutes
-        time_rounded = timedelta(minutes=time.minute % 1, seconds=time.second, microseconds=time.microsecond)
+        time_rounded = timedelta(minutes=time.minute % 3, seconds=time.second, microseconds=time.microsecond)
         # subtract the rounded time
         rounded_time = time - time_rounded
         # This variable will be used to generate the TFA code and will generate the same TFA Code
         # for 3 minutes
-        print(rounded_time)
+        # print(rounded_time)
         return rounded_time
 
     def generate_tfa_code(self, username):
@@ -34,7 +34,7 @@ class TFA:
         # Convert the rounded time to a string with only the year, month, day, hour, and minute rounded down by 3
         # this formats the string to include 4 digit year, 2 digit month, 2 digit day, 2 digit hour, and 2 digit minute
         rounded_time_str = rounded_time.strftime("%Y%m%d%H%M")
-        print(rounded_time_str)
+        # print(rounded_time_str)
         # Here the rounded down time is combined with a secret key before hashing
         message = f"{rounded_time_str}{self.SECRET_KEY}{username}"
 
@@ -46,7 +46,7 @@ class TFA:
         # This will use only the first 6 characters of the hash for a code
         tfa_code = hash_str[:6]
         # print for testing
-        print(tfa_code)
+        # print(tfa_code)
         return tfa_code
 
     def generate_hash(self, username, tfacode=None):
@@ -79,4 +79,14 @@ class TFA:
             return True
         else:
             return False
+
+    def get_current_expiration(self):
+        # get the current time
+        current_time = datetime.now()
+        # get the rounded time
+        rounded_time = self.generate_time_based_variable(current_time)
+        # add 3 minutes to the rounded time
+        expiration = rounded_time + timedelta(minutes=3)
+        # return the expiration time
+        return expiration
 

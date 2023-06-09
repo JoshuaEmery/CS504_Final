@@ -76,8 +76,8 @@
               console.log(xhr.responseText);
               const response = JSON.parse(xhr.responseText);
               // Redirect to tfa.html with username as a query parameters
-              var redirectUrl =
-                "tfa.html?email=" + encodeURIComponent(response["email"]);
+              const redirectUrl =
+                "verify.html?email=" + encodeURIComponent(response["email"]);
               window.open(redirectUrl, "_blank");
             } else {
               // Failed login

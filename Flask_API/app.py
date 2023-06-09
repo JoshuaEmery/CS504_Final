@@ -2,10 +2,11 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS 
 from flask import request, jsonify
-from dbSecretsLocal import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from dbSecretsLive import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from datetime import datetime, timedelta
 from mfahash import TFA
 import hashlib
+from twilio.rest import Client
 
 app = Flask(__name__)
 CORS(app)
@@ -69,11 +70,7 @@ def get_user_by_id(id):
         'password_hash': user.password_hash,
         'failed_login_time': user.failed_login_time
     }
-    return jsonify(user_data)
-
-# endpoint to create a new user
-
-#
+    return jsonify(user_data), 200
 
 
 @app.route('/users', methods=['POST'])
@@ -111,7 +108,7 @@ def create_user():
         'locked_out': new_user.locked_out,
         'locked_out_end': new_user.locked_out_end
     }
-    return jsonify(user_data)
+    return jsonify(user_data), 200
 
 #endpoint for login
 @app.route('/login', methods=['POST'])
@@ -167,37 +164,75 @@ def login():
         'locked_out': user.locked_out,
         'locked_out_end': user.locked_out_end
     }
-    return jsonify(user_data)
-
+    return jsonify(user_data), 200
+# endpoint to generate a tfa code
 @app.route('/tfa', methods=['POST'])
 def tfa():
     data = request.get_json()
+    # check that a username is provided
     if data['username'] == '':
         return 'username is required', 400
+    # verify that the user exists
     user = User.query.filter_by(email_to_upper=data['username'].upper()).first()
-    print(user)
-    print(data['username'])
     if user is None:
         return 'user not found', 404
+    # generate the tfa code
     tfa_code = authenticator.generate_tfa_code(user.username)
-    return jsonify({'tfa_code': tfa_code})
-
+    # get the expiration time
+    expiration = authenticator.get_current_expiration()
+    # return the tfa code and expiration time
+    response = {
+            'tfa_code': tfa_code,
+            'valid_duration': str(expiration)
+        }
+    return jsonify(response), 200
+    
+# endpoint to validate a tfa code
 @app.route('/tfa/validate', methods=['POST'])
 def tfa_validate():
     data = request.get_json()
+    # check that a username and tfa code are provided
     if data['username'] == '' or data['tfa_code'] == '':
         return 'username and tfa_code are required', 400
+    # verify that the user exists
     user = User.query.filter_by(email_to_upper=data['username'].upper()).first()
     if user is None:
         return 'user not found', 404
-    if data['tfa_code'] == authenticator.generate_tfa_code(user.username):
+    # validate the tfa code
+    if authenticator.validate_tfa(user.username, data['tfa_code']):
         return 'tfa code is valid', 200
     else:
         return 'tfa code is invalid', 401
 
+# endpoint to test the tfa code generation
 @app.route('/testtfa', methods=['GET'])
 def test_tfa():
     return authenticator.generate_tfa_code('testuser')
+
+# endpoint that returns the current expiration time
+@app.route('/expiration', methods=['GET'])
+def expiration():
+    response = {
+        'expiration': str(authenticator.get_current_expiration())
+    }
+    return jsonify(response), 200
+# This is not currently working due to restrictions on
+# our twilio account
+# method to send twilio message
+# def send_twilio_message(code):
+#     account_sid = TWILIO_ACCOUNT_SID
+#     auth_token = TWILIO_AUTH_TOKEN
+#     print(code)
+#     client = Client(account_sid, auth_token)
+#     message = client.messages.create(
+#         body="Sending a message " + code,
+#         from_="+18666966498",
+#         to="+12067138485"
+#     )
+#     print(message.status)
+    
+    
+
 
 if __name__ == '__main__':
     app.run(port=8080)
