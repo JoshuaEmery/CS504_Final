@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask import request, jsonify
 from dbSecretsLocal import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from datetime import datetime, timedelta
-import mfahash
+from mfahash import TFA
 import hashlib
 
 app = Flask(__name__)
@@ -13,6 +13,8 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 # create the DB object
 db = SQLAlchemy(app)
+# create the tfa object
+authenticator = TFA('secretkey')
 
 # class to represent the users table
 class User(db.Model):
@@ -177,7 +179,7 @@ def tfa():
     print(data['username'])
     if user is None:
         return 'user not found', 404
-    tfa_code = mfahash.generate_tfa_code(user.username)
+    tfa_code = authenticator.generate_tfa_code(user.username)
     return jsonify({'tfa_code': tfa_code})
 
 @app.route('/tfa/validate', methods=['POST'])
@@ -188,10 +190,14 @@ def tfa_validate():
     user = User.query.filter_by(email_to_upper=data['username'].upper()).first()
     if user is None:
         return 'user not found', 404
-    if data['tfa_code'] == mfahash.generate_tfa_code(user.username):
+    if data['tfa_code'] == authenticator.generate_tfa_code(user.username):
         return 'tfa code is valid', 200
     else:
         return 'tfa code is invalid', 401
+
+@app.route('/testtfa', methods=['GET'])
+def test_tfa():
+    return authenticator.generate_tfa_code('testuser')
 
 if __name__ == '__main__':
     app.run(port=8080)
