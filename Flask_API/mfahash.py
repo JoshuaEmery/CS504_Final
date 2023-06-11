@@ -26,7 +26,7 @@ class TFA:
         # for 3 minutes
         # print(rounded_time)
         return rounded_time
-
+    # This generates a 6 character code based on a username
     def generate_tfa_code(self, username):
         # Get the rounded down time
         rounded_time = self.generate_time_based_variable()
@@ -48,7 +48,7 @@ class TFA:
         # print for testing
         # print(tfa_code)
         return tfa_code
-
+    # this just is just a hashed representation 
     def generate_hash(self, username, tfacode=None):
         # get the rounded time
         timestamp = self.generate_time_based_variable()
@@ -68,7 +68,7 @@ class TFA:
         # print for testing
         # print(hash_str)
         return hash_str
-
+    # this validates a tfa code
     def validate_tfa(self, username, tfacode):
         # get the hash for the provided username and tfa code
         provided_hash = self.generate_hash(username, tfacode)
@@ -79,7 +79,7 @@ class TFA:
             return True
         else:
             return False
-
+    # this gets the time that the codes are going to expire
     def get_current_expiration(self):
         # get the current time
         current_time = datetime.now()
