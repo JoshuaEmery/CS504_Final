@@ -1,11 +1,20 @@
+#Importing Flask
 from flask import Flask
+#Adding Flask SQL
 from flask_sqlalchemy import SQLAlchemy
+#Adding Cross Origin Resource Sharing
 from flask_cors import CORS 
+#Importing JSON
 from flask import request, jsonify
+#Importing username, password, host, port, and name information for database
 from dbSecretsLive import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+#Importing datime objects
 from datetime import datetime, timedelta
+#Importing authorized user
 from mfahash import TFA
+#Allow for easy hashing messaging
 import hashlib
+#Adding twilo RESTAPI
 from twilio.rest import Client
 
 app = Flask(__name__)
